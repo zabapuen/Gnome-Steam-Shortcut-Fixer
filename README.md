@@ -22,7 +22,10 @@ Utility tested on 2 PCs with GNOME 47 on Nobara 41 and Fedora 41.
     cd Gnome-Steam-Shortcut-Fixer
     ```
 
-2. Make sure `curl` and `jq` are installed on your system.
+2. Make sure `curl`, `jq`, `wget`, and `imagemagick` are installed on your system.
+    ```bash
+    sudo apt install jq wget imagemagick
+    ```
 
 3. Make the script executable:
     ```bash

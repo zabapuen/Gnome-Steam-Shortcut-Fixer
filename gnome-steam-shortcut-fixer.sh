@@ -107,6 +107,54 @@ getInstalledAppIds() {
     done
 }
 
+downloadGameIcon() {
+    local appId="$1"
+
+    local clienticon
+    local tmpIco="/tmp/${appId}.ico"
+
+    # Get clienticon from SteamCMD api
+    clienticon=$(
+        curl -s "https://api.steamcmd.net/v1/info/$appId" |
+        jq -r ".data[\"$appId\"].common.clienticon // empty"
+    )
+
+    if [ -z "$clienticon" ]; then
+        echo "No clienticon found"
+        return 1
+    fi
+
+    # Download icon from steamstatic
+    local iconUrl="https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/apps/$appId/$clienticon.ico"
+
+    wget -q -O "$tmpIco" "$iconUrl"
+
+    # Generate .png files from .ico file downloaded
+    magick identify -format "%p %wx%h\n" "$tmpIco" | while read -r index size
+    do
+        width="${size%x*}"
+        height="${size#*x}"
+
+        # Ignore non-square sizes
+        if [ "$width" != "$height" ]; then
+            continue
+        fi
+
+        mkdir -p "$iconsPath/$size/apps"
+
+        magick "${tmpIco}[${index}]" \
+            "$iconsPath/$size/apps/steam_icon_${appId}.png"
+
+        echo "Generated $size icon"
+    done
+
+    rm -f "$tmpIco"
+
+    gtk-update-icon-cache ~/.local/share/icons/hicolor >/dev/null 2>&1
+
+    echo "Done for $appId"
+}
+
 # Function to create/replace new shortcuts for all games
 createNewShortcuts() {
     # Get the library folders from the libraryfolders.vdf file
@@ -124,6 +172,12 @@ createNewShortcuts() {
         if [ "$gameName" != "null" ]; then
             # Check if the icon exists in the .local/share/icons/hicolor/48x48/apps folder
             gameIcon=$(find "$iconsPath" | grep "steam_icon_$appId.png")
+
+            # Download icon if it doesn't exist
+            if [ -z "$gameIcon" ]; then
+                downloadGameIcon "$appId"
+                gameIcon=$(find "$iconsPath" | grep "steam_icon_$appId.png")
+            fi
 
             echo -e "\e[32mCreating shortcut for $gameName\e[0m"
             echo -e "\e[90m--------------------------\e[0m"
