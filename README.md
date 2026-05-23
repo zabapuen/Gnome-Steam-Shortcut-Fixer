@@ -47,6 +47,9 @@ Fix existing shortcuts:
 Create new shortcuts for all installed games:
 `-c` or `--create`
 
+Install Steam Shortcut fixer Service:
+`-s` or `--service`
+
 Display the help message:
 `-h` or `--help`
 

@@ -223,6 +223,41 @@ createNewShortcuts() {
     done
 }
 
+installSteamShortcutFixerService() {
+    set -euo pipefail
+
+    local serviceName="steam-shortcut-fixer.service"
+    local scriptName="steam-shortcut-fixer-daemon.sh"
+
+    local binDir="${HOME}/.local/bin"
+    local systemdUserDir="${HOME}/.config/systemd/user"
+
+    mkdir -p "${binDir}"
+    mkdir -p "${systemdUserDir}"
+
+    # Install daemon script
+    install -m 755 "./${scriptName}" "${binDir}/${scriptName}"
+
+    # Install user systemd service
+    install -m 644 "./${serviceName}" "${systemdUserDir}/${serviceName}"
+
+    # Reload user systemd manager
+    systemctl --user daemon-reload
+
+    # Enable and start service
+    systemctl --user enable --now "${serviceName}"
+
+    echo "Service installed and started:"
+    echo "  ${systemdUserDir}/${serviceName}"
+
+    echo "Script installed at:"
+    echo "  ${binDir}/${scriptName}"
+
+    echo
+    echo "Service status:"
+    systemctl --user --no-pager --full status "${serviceName}" || true
+}
+
 # Function to display the help message
 helpCommand() {
     echo "Usage: gnome-steam-shortcut-fixer.sh [OPTION]"
@@ -232,6 +267,7 @@ helpCommand() {
     echo "  -h, --help      Display this help message"
     echo "  -f, --fix       Fix existing shortcuts"
     echo "  -c, --create    Create new shortcuts"
+    echo "  -s, --service   Install Steam Shortcut fixer Service"
 }
 
 # Main
@@ -249,6 +285,10 @@ case "$1" in
     -c|--create)
         initVariables
         createNewShortcuts
+        exit 0
+        ;;
+    -s|--service)
+        installSteamShortcutFixerService
         exit 0
         ;;
     *)
